@@ -9,6 +9,10 @@ use cf_speedtest::{run_download_test, run_upload_test};
 
 
 fn main() {
+    env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Info)
+        .init();
+
     let config: UserArgs = argh::from_env();
     config.validate().expect("Invalid arguments");
 

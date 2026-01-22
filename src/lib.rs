@@ -54,7 +54,7 @@ pub struct TestResults {
 pub fn run_speed_test(expedite: bool) -> anyhow::Result<SpeedTestResult> {
     let mut config = UserArgs::default();
     if expedite {
-        config.test_duration_seconds = 3;
+        config.test_duration_seconds = 6;
     }
 
     let results = Arc::new(Mutex::new(TestResults::default()));
