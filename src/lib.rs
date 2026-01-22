@@ -64,7 +64,6 @@ pub fn run_speed_test(expedite: bool) -> anyhow::Result<SpeedTestResult> {
     }
 
     if !config.download_only {
-        println!("Starting upload tests...");
         run_upload_test(&config, Arc::clone(&results));
     }
 
@@ -77,7 +76,7 @@ pub fn run_speed_test(expedite: bool) -> anyhow::Result<SpeedTestResult> {
     let (upload_median, _, _, _, _, _) = compute_statistics(&mut up_measurements);
 
     Ok(SpeedTestResult {
-        download_mbps: download_median,
-        upload_mbps: upload_median
+        download_mbps: download_median / 1_000_000.0 * 8.0,
+        upload_mbps: upload_median / 1_000_000.0 * 8.0
     })
 }
