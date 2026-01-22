@@ -46,3 +46,17 @@ impl UserArgs {
         }
     }
 }
+
+impl Default for UserArgs {
+    fn default() -> Self {
+        Self {
+            download_threads: 8,
+            upload_threads: 8,
+            download_only: false,
+            upload_only: false,
+            bytes_to_download: 50 * 1024 * 1024,
+            bytes_to_upload: 50 * 1024 * 1024,
+            test_duration_seconds: 12,
+        }
+    }
+}

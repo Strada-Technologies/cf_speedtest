@@ -1,3 +1,7 @@
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+use crate::speed_test::{download_test, get_appropriate_byte_unit, get_our_ip_address_country, upload_test};
+
 use super::*;
 
 #[test]

@@ -4,7 +4,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use ureq::Agent;
 
-// Import constants from main.rs
 use crate::{CONNECT_TIMEOUT_MILLIS, OUR_USER_AGENT};
 
 pub fn create_configured_agent() -> Agent {
