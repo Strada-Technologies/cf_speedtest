@@ -26,6 +26,7 @@ ctrlc = "3.5.1"
 phf = { version = "0.13", features = ["macros"] }
 socket2 = "0.6.1"
 serde = "1"
+anyhow = "1"
 
 [profile.release]
 debug = false

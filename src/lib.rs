@@ -4,6 +4,8 @@ pub use speed_test::{run_download_test, run_upload_test};
 pub use print::{print_results_table, print_test_preamble};
 pub use args::UserArgs;
 
+use crate::speed_test::compute_statistics;
+
 
 mod args;
 mod agent;
@@ -49,7 +51,7 @@ pub struct TestResults {
     pub upload_completed: bool,
 }
 
-pub fn run_speed_test(expedite: bool) {
+pub fn run_speed_test(expedite: bool) -> anyhow::Result<SpeedTestResult> {
     let mut config = UserArgs::default();
     if expedite {
         config.test_duration_seconds = 3;
@@ -65,4 +67,17 @@ pub fn run_speed_test(expedite: bool) {
         println!("Starting upload tests...");
         run_upload_test(&config, Arc::clone(&results));
     }
+
+
+    let results = results.lock().map_err(|err| anyhow::anyhow!(err.to_string()))?;
+    let mut down_measurements = results.down_measurements.clone();
+    let mut up_measurements = results.up_measurements.clone();
+
+    let (download_median, _, _, _, _, _) = compute_statistics(&mut down_measurements);
+    let (upload_median, _, _, _, _, _) = compute_statistics(&mut up_measurements);
+
+    Ok(SpeedTestResult {
+        download_mbps: download_median,
+        upload_mbps: upload_median
+    })
 }
