@@ -1,4 +1,4 @@
-use std::{io::{self, Write}, sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}}, thread::JoinHandle, time::{Instant, SystemTime, UNIX_EPOCH}};
+use std::{sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}}, thread::JoinHandle, time::{Instant, SystemTime, UNIX_EPOCH}};
 
 use ureq::Agent;
 
@@ -206,7 +206,7 @@ pub fn upload_test(
             Ok(resp) => resp,
             Err(err) => {
                 if !CTRL_C_PRESSED.load(Ordering::Relaxed) {
-                    eprintln!("Error in upload thread: {err}");
+                    log::error!("Error in upload thread: {err}");
                 }
                 return Ok(());
             }
@@ -243,7 +243,7 @@ pub fn download_test(
             Ok(conn) => conn,
             Err(err) => {
                 if !CTRL_C_PRESSED.load(Ordering::Relaxed) {
-                    eprintln!("Error in download thread: {err}");
+                    log::error!("Error in download thread: {err}");
                 }
                 return Ok(());
             }
@@ -269,7 +269,7 @@ pub fn download_test(
                 Ok(n) => n,
                 Err(err) => {
                     if !CTRL_C_PRESSED.load(Ordering::Relaxed) {
-                        eprintln!("Error reading from socket: {err}");
+                        log::error!("Error reading from socket: {err}");
                     }
                     // Connection error, break to create a new connection
                     break;
@@ -278,7 +278,7 @@ pub fn download_test(
 
             if bytes_read == 0 {
                 if total_bytes_sank == 0 {
-                    eprintln!("Cloudflare sent an empty response?");
+                    log::error!("Cloudflare sent an empty response?");
                 }
                 // Connection exhausted, break inner loop to make a new request
                 break;
@@ -337,7 +337,7 @@ where
                     Ok(_) => {}
                     Err(e) => {
                         if !CTRL_C_PRESSED.load(Ordering::Relaxed) {
-                            println!("Error in download test thread {i}: {e:?}");
+                            log::error!("Error in download test thread {i}: {e:?}");
                         }
                         return;
                     }
@@ -345,7 +345,7 @@ where
 
                 // exit if we have passed the deadline
                 if exit_signal_clone.load(Ordering::Relaxed) {
-                    // println!("Thread {} exiting...", i);
+                    // log::info!("Thread {} exiting...", i);
                     return;
                 }
             }
@@ -379,7 +379,7 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) ->
     total_downloaded_bytes_counter.store(0, Ordering::SeqCst);
     let mut down_measurements = vec![];
 
-    // Calculate and print download speed
+    // Calculate and log download speed
     loop {
         let bytes_down = total_downloaded_bytes_counter.load(Ordering::Relaxed);
         let bytes_down_diff = bytes_down - last_bytes_down;
@@ -394,9 +394,9 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) ->
         }
 
         let speed_values = get_appropriate_byte_unit(bytes_down_diff as u64);
-        // only print progress if we are before deadline
+        // only log progress if we are before deadline
         if get_secs_since_unix_epoch() < down_deadline {
-            println!(
+            log::info!(
                 "Download: {bit_speed:>12.*}it/s       ({byte_speed:>10.*}/s)",
                 16,
                 16,
@@ -404,7 +404,6 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) ->
                 bit_speed = speed_values.1
             );
         }
-        io::stdout().flush().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(1000));
         last_bytes_down = bytes_down;
 
@@ -415,7 +414,7 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) ->
         }
     }
 
-    println!("Waiting for download threads to finish...");
+    log::info!("Waiting for download threads to finish...");
     for handle in down_handles {
         handle.join().expect("Couldn't join download thread");
     }
@@ -453,7 +452,7 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> V
     let mut up_measurements = vec![];
     total_uploaded_bytes_counter.store(0, Ordering::SeqCst);
 
-    // Calculate and print upload speed
+    // Calculate and log upload speed
     loop {
         let bytes_up = total_uploaded_bytes_counter.load(Ordering::Relaxed);
 
@@ -467,7 +466,7 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> V
 
         let speed_values = get_appropriate_byte_unit(bytes_up_diff as u64);
 
-        println!(
+        log::info!(
             "Upload:   {bit_speed:>12.*}it/s       ({byte_speed:>10.*}/s)",
             16,
             16,
@@ -475,7 +474,6 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> V
             bit_speed = speed_values.1
         );
 
-        io::stdout().flush().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(1000));
         last_bytes_up = bytes_up;
 
@@ -487,7 +485,7 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> V
     }
 
     // wait for upload threads to finish
-    println!("Waiting for upload threads to finish...");
+    log::info!("Waiting for upload threads to finish...");
     for handle in up_handles {
         handle.join().expect("Couldn't join upload thread");
     }
