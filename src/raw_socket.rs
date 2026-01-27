@@ -37,7 +37,7 @@ impl RawDownloadConnection {
         let mut root_store = RootCertStore::empty();
         root_store.roots = webpki_roots::TLS_SERVER_ROOTS.to_vec();
 
-        let provider = rustls::crypto::ring::default_provider();
+        let provider = rustls::crypto::aws_lc_rs::default_provider();
         let chacha_only_provider = CryptoProvider {
             cipher_suites: vec![*provider
                 .cipher_suites

@@ -20,7 +20,7 @@ doc = false
 ureq = "3.1.2"
 chrono = "0.4.42"
 argh = "0.1.13"
-rustls = { version = "0.23.33", default-features = false, features = ["ring"] }
+rustls = "0.23"
 webpki-roots = "1.0.3"
 ctrlc = "3.5.1"
 phf = { version = "0.13", features = ["macros"] }
