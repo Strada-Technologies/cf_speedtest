@@ -2,7 +2,7 @@ use std::{sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}}, threa
 
 use ureq::Agent;
 
-use crate::{CLOUDFLARE_SPEEDTEST_CGI_URL, CLOUDFLARE_SPEEDTEST_DOWNLOAD_URL, CLOUDFLARE_SPEEDTEST_SERVER_URL, CLOUDFLARE_SPEEDTEST_UPLOAD_URL, CTRL_C_PRESSED, LATENCY_TEST_COUNT, NEW_METAL_SLEEP_MILLIS, TestResults, agent::create_configured_agent, args::UserArgs, raw_socket::RawDownloadConnection};
+use crate::{CLOUDFLARE_SPEEDTEST_CGI_URL, CLOUDFLARE_SPEEDTEST_DOWNLOAD_URL, CLOUDFLARE_SPEEDTEST_SERVER_URL, CLOUDFLARE_SPEEDTEST_UPLOAD_URL, CTRL_C_PRESSED, LATENCY_TEST_COUNT, NEW_METAL_SLEEP_MILLIS, REFERER_HEADER, ORIGIN_HEADER, TestResults, agent::create_configured_agent, args::UserArgs, raw_socket::RawDownloadConnection};
 
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -107,7 +107,10 @@ fn get_appropriate_buff_size(speed: usize) -> u64 {
 
 // Use cloudflare's cdn-cgi endpoint to get our ip address country
 pub fn get_our_ip_address_country() -> Result<String> {
-    let mut resp = ureq::get(CLOUDFLARE_SPEEDTEST_CGI_URL).call()?;
+    let mut resp = ureq::get(CLOUDFLARE_SPEEDTEST_CGI_URL)
+        .header("Referer", REFERER_HEADER)
+        .header("Origin", ORIGIN_HEADER)
+        .call()?;
     let body: String = resp.body_mut().read_to_string()?;
 
     for line in body.lines() {
@@ -141,6 +144,8 @@ pub fn get_download_server_http_latency() -> Result<std::time::Duration> {
 
         let _response = my_agent
             .get(CLOUDFLARE_SPEEDTEST_CGI_URL)
+            .header("Referer", REFERER_HEADER)
+            .header("Origin", ORIGIN_HEADER)
             .call()?
             .body_mut()
             .read_to_string();
@@ -157,6 +162,8 @@ pub fn get_download_server_http_latency() -> Result<std::time::Duration> {
 pub fn get_download_server_info() -> Result<std::collections::HashMap<String, String>> {
     let mut server_headers = std::collections::HashMap::new();
     let resp = ureq::get(CLOUDFLARE_SPEEDTEST_SERVER_URL)
+        .header("Referer", REFERER_HEADER)
+        .header("Origin", ORIGIN_HEADER)
         .call()
         .expect("Failed to get server info");
 
@@ -201,6 +208,8 @@ pub fn upload_test(
         let resp = match agent
             .post(CLOUDFLARE_SPEEDTEST_UPLOAD_URL)
             .header("Content-Type", "text/plain;charset=UTF-8")
+            .header("Referer", REFERER_HEADER)
+            .header("Origin", ORIGIN_HEADER)
             .send(body)
         {
             Ok(resp) => resp,

@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::{CONNECT_TIMEOUT_MILLIS, OUR_USER_AGENT};
+use crate::{CONNECT_TIMEOUT_MILLIS, OUR_USER_AGENT, REFERER_HEADER, ORIGIN_HEADER};
 
 pub struct RawDownloadConnection {
     tcp_stream: TcpStream,
@@ -87,9 +87,11 @@ impl RawDownloadConnection {
             "GET {path}&bytes={bytes_to_request} HTTP/1.1\r\n\
              Host: {host}\r\n\
              User-Agent: {}\r\n\
+             Referer: {}\r\n\
+             Origin: {}\r\n\
              Connection: close\r\n\
              \r\n",
-            OUR_USER_AGENT
+            OUR_USER_AGENT, REFERER_HEADER, ORIGIN_HEADER
         );
 
         tls_conn

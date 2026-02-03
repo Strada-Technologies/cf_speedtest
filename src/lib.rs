@@ -25,11 +25,9 @@ static CLOUDFLARE_SPEEDTEST_UPLOAD_URL: &str = "https://speed.cloudflare.com/__u
 static CLOUDFLARE_SPEEDTEST_SERVER_URL: &str =
     "https://speed.cloudflare.com/__down?measId=0&bytes=0";
 static CLOUDFLARE_SPEEDTEST_CGI_URL: &str = "https://speed.cloudflare.com/cdn-cgi/trace";
-static OUR_USER_AGENT: &str = concat!(
-    "cf_speedtest (",
-    env!("CARGO_PKG_VERSION"),
-    ") https://github.com/12932/cf_speedtest"
-);
+static OUR_USER_AGENT: &str = "Strada (strada.tech)";
+static REFERER_HEADER: &str = "https://speed.cloudflare.com/";
+static ORIGIN_HEADER: &str = "https://speed.cloudflare.com";
 
 static CONNECT_TIMEOUT_MILLIS: u64 = 9600;
 static LATENCY_TEST_COUNT: u8 = 8;
@@ -69,11 +67,11 @@ pub fn run_speed_test() -> anyhow::Result<SpeedTestResult> {
     let mut down_measurements = results.down_measurements.clone();
     let mut up_measurements = results.up_measurements.clone();
 
-    let (download_median, _, _, _, _, _) = compute_statistics(&mut down_measurements);
-    let (upload_median, _, _, _, _, _) = compute_statistics(&mut up_measurements);
+    let (_, _, download_p90, _, _, _) = compute_statistics(&mut down_measurements);
+    let (_, _, upload_p90, _, _, _) = compute_statistics(&mut up_measurements);
 
     Ok(SpeedTestResult {
-        download_mbps: download_median / 1_000_000.0 * 8.0,
-        upload_mbps: upload_median / 1_000_000.0 * 8.0
+        download_mbps: download_p90 / 1_000_000.0 * 8.0,
+        upload_mbps: upload_p90 / 1_000_000.0 * 8.0
     })
 }
