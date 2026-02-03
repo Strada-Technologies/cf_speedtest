@@ -71,7 +71,7 @@ pub fn run_speed_test() -> anyhow::Result<SpeedTestResult> {
     let (_, _, upload_p90, _, _, _) = compute_statistics(&mut up_measurements);
 
     Ok(SpeedTestResult {
-        download_mbps: download_p90 / 1_000_000.0 * 8.0,
-        upload_mbps: upload_p90 / 1_000_000.0 * 8.0
+        download_mbps: download_p90 as f64 / 1_000_000.0 * 8.0,
+        upload_mbps: upload_p90 as f64 / 1_000_000.0 * 8.0
     })
 }
