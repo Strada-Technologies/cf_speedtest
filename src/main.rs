@@ -33,12 +33,12 @@ fn main() {
     print_test_preamble();
 
     if !config.upload_only {
-        run_download_test(&config, Arc::clone(&results), &Arc::new(AtomicBool::new(false)));
+        run_download_test(&config, Arc::clone(&results), Arc::new(AtomicBool::new(false)));
     }
 
     if !config.download_only {
         println!("Starting upload tests...");
-        run_upload_test(&config, Arc::clone(&results), &Arc::new(AtomicBool::new(false)));
+        run_upload_test(&config, Arc::clone(&results), Arc::new(AtomicBool::new(false)));
     }
 
     // Print final results
