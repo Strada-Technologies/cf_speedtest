@@ -365,11 +365,9 @@ where
     thread_handles
 }
 
-pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> Vec<usize> {
+pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit_signal: &Arc<AtomicBool>) -> Vec<usize> {
     let total_downloaded_bytes_counter = Arc::new(AtomicUsize::new(0));
-    let exit_signal = Arc::new(AtomicBool::new(false));
 
-    exit_signal.store(false, Ordering::SeqCst);
     let current_down_speed = Arc::new(AtomicUsize::new(0));
     let down_deadline = get_secs_since_unix_epoch()
         + get_test_time(config.test_duration_seconds, config.download_threads);
@@ -437,12 +435,9 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) ->
     down_measurements
 }
 
-pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> Vec<usize> {
-    let exit_signal = Arc::new(AtomicBool::new(false));
+pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit_signal: &Arc<AtomicBool>) -> Vec<usize> {
     let total_uploaded_bytes_counter = Arc::new(AtomicUsize::new(0));
     let current_up_speed = Arc::new(AtomicUsize::new(0));
-    // re-use exit_signal for upload tests
-    exit_signal.store(false, Ordering::SeqCst);
 
     let up_deadline = get_secs_since_unix_epoch()
         + get_test_time(config.test_duration_seconds, config.upload_threads);
@@ -454,7 +449,7 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>) -> V
         config.bytes_to_upload,
         &total_uploaded_bytes_counter,
         &current_up_speed,
-        &exit_signal,
+        exit_signal,
     );
 
     let mut last_bytes_up = 0;

@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, atomic::AtomicBool};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 
 pub use speed_test::{run_download_test, run_upload_test};
 pub use print::{print_results_table, print_test_preamble};
@@ -34,7 +34,6 @@ static LATENCY_TEST_COUNT: u8 = 8;
 static NEW_METAL_SLEEP_MILLIS: u32 = 250;
 
 
-
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct SpeedTestResult {
     pub download_mbps: f64,
@@ -49,29 +48,51 @@ pub struct TestResults {
     pub upload_completed: bool,
 }
 
-pub fn run_speed_test() -> anyhow::Result<SpeedTestResult> {
-    let config = UserArgs::default();
 
-    let results = Arc::new(Mutex::new(TestResults::default()));
+pub struct SpeedTest {
+    download_exit_signal: Arc<AtomicBool>,
+    upload_exit_signal: Arc<AtomicBool>
+}
 
-    if !config.upload_only {
-        run_download_test(&config, Arc::clone(&results));
+impl SpeedTest {
+    pub fn new() -> Self {
+        Self {
+            download_exit_signal: Arc::new(AtomicBool::new(false)),
+            upload_exit_signal: Arc::new(AtomicBool::new(false)),
+        }
     }
 
-    if !config.download_only {
-        run_upload_test(&config, Arc::clone(&results));
+    pub fn run(&self) -> anyhow::Result<SpeedTestResult> {
+        let config = UserArgs::default();
+
+        let results = Arc::new(Mutex::new(TestResults::default()));
+
+        if !config.upload_only {
+            run_download_test(&config, Arc::clone(&results), &self.download_exit_signal);
+        }
+
+        if !config.download_only {
+            run_upload_test(&config, Arc::clone(&results), &self.upload_exit_signal);
+        }
+
+
+        let results = results.lock().map_err(|err| anyhow::anyhow!(err.to_string()))?;
+        let mut down_measurements = results.down_measurements.clone();
+        let mut up_measurements = results.up_measurements.clone();
+
+        let (_, _, download_p90, _, _, _) = compute_statistics(&mut down_measurements);
+        let (_, _, upload_p90, _, _, _) = compute_statistics(&mut up_measurements);
+
+        Ok(SpeedTestResult {
+            download_mbps: download_p90 as f64 / 1_000_000.0 * 8.0,
+            upload_mbps: upload_p90 as f64 / 1_000_000.0 * 8.0
+        })
     }
+}
 
-
-    let results = results.lock().map_err(|err| anyhow::anyhow!(err.to_string()))?;
-    let mut down_measurements = results.down_measurements.clone();
-    let mut up_measurements = results.up_measurements.clone();
-
-    let (_, _, download_p90, _, _, _) = compute_statistics(&mut down_measurements);
-    let (_, _, upload_p90, _, _, _) = compute_statistics(&mut up_measurements);
-
-    Ok(SpeedTestResult {
-        download_mbps: download_p90 as f64 / 1_000_000.0 * 8.0,
-        upload_mbps: upload_p90 as f64 / 1_000_000.0 * 8.0
-    })
+impl Drop for SpeedTest {
+    fn drop(&mut self) {
+        self.download_exit_signal.store(true, Ordering::SeqCst);
+        self.upload_exit_signal.store(true, Ordering::SeqCst);
+    }
 }
