@@ -51,7 +51,8 @@ pub struct TestResults {
 
 pub struct SpeedTest {
     download_exit_signal: Arc<AtomicBool>,
-    upload_exit_signal: Arc<AtomicBool>
+    upload_exit_signal: Arc<AtomicBool>,
+    config: UserArgs
 }
 
 impl SpeedTest {
@@ -59,22 +60,30 @@ impl SpeedTest {
         Self {
             download_exit_signal: Arc::new(AtomicBool::new(false)),
             upload_exit_signal: Arc::new(AtomicBool::new(false)),
+            config: UserArgs::default()
         }
     }
 
-    pub fn run(&self) -> anyhow::Result<SpeedTestResult> {
-        let config = UserArgs::default();
-
+    pub async fn run(&self) -> anyhow::Result<SpeedTestResult> {
         let results = Arc::new(Mutex::new(TestResults::default()));
+        let config = self.config.clone();
 
         if !config.upload_only {
-            run_download_test(&config, Arc::clone(&results), &self.download_exit_signal);
+            let download_exit_signal = self.download_exit_signal.clone();
+            let results = results.clone();
+            let config = config.clone();
+            tokio::task::spawn_blocking(move || {
+                run_download_test(&config, results.clone(), download_exit_signal);
+            }).await?;
         }
-
         if !config.download_only {
-            run_upload_test(&config, Arc::clone(&results), &self.upload_exit_signal);
+            let upload_exit_signal = self.upload_exit_signal.clone();
+            let results = results.clone();
+            let config = config.clone();
+            tokio::task::spawn_blocking(move || {
+                run_upload_test(&config, results.clone(), upload_exit_signal);
+            }).await?;
         }
-
 
         let results = results.lock().map_err(|err| anyhow::anyhow!(err.to_string()))?;
         let mut down_measurements = results.down_measurements.clone();

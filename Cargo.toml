@@ -29,6 +29,7 @@ serde = "1"
 anyhow = "1"
 log = "0.4"
 env_logger = "0.11"
+tokio = { version = "1", features = ["rt"] }
 
 [profile.release]
 debug = false

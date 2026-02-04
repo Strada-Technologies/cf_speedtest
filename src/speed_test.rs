@@ -365,7 +365,7 @@ where
     thread_handles
 }
 
-pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit_signal: &Arc<AtomicBool>) -> Vec<usize> {
+pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit_signal: Arc<AtomicBool>) -> Vec<usize> {
     let total_downloaded_bytes_counter = Arc::new(AtomicUsize::new(0));
 
     let current_down_speed = Arc::new(AtomicUsize::new(0));
@@ -435,7 +435,7 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, ex
     down_measurements
 }
 
-pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit_signal: &Arc<AtomicBool>) -> Vec<usize> {
+pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit_signal: Arc<AtomicBool>) -> Vec<usize> {
     let total_uploaded_bytes_counter = Arc::new(AtomicUsize::new(0));
     let current_up_speed = Arc::new(AtomicUsize::new(0));
 
@@ -449,7 +449,7 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit
         config.bytes_to_upload,
         &total_uploaded_bytes_counter,
         &current_up_speed,
-        exit_signal,
+        &exit_signal,
     );
 
     let mut last_bytes_up = 0;
