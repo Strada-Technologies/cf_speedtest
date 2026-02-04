@@ -388,6 +388,10 @@ pub fn run_download_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, ex
 
     // Calculate and log download speed
     loop {
+        if exit_signal.load(Ordering::SeqCst) {
+            break;
+        }
+
         let bytes_down = total_downloaded_bytes_counter.load(Ordering::Relaxed);
         let bytes_down_diff = bytes_down - last_bytes_down;
 
@@ -458,6 +462,10 @@ pub fn run_upload_test(config: &UserArgs, results: Arc<Mutex<TestResults>>, exit
 
     // Calculate and log upload speed
     loop {
+        if exit_signal.load(Ordering::SeqCst) {
+            break;
+        }
+
         let bytes_up = total_uploaded_bytes_counter.load(Ordering::Relaxed);
 
         let bytes_up_diff = bytes_up - last_bytes_up;
